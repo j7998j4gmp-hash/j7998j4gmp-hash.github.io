@@ -80,9 +80,24 @@ def upload_to_drive(filename, content):
         print("Created:", filename)
 
 def main():
-    # Start with the previous calendar day.
-    date = "2026-11-20"
-    rows = get_stock_data(date)
+
+    # Search the most recent seven calendar days.
+    today = datetime.now(JST).date()
+    rows = []
+    date = None
+
+    for days_ago in range(1, 8):
+        candidate = (today - timedelta(days=days_ago)).strftime("%Y-%m-%d")
+        rows = get_stock_data(candidate)
+
+        if rows:
+            date = candidate
+            print("Latest available trading date:", date)
+            break
+
+    if date is None:
+        print("No stock data found in the last seven days")
+        return
 
     if not rows:
         print("No stock data for", date)
