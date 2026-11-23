@@ -81,7 +81,7 @@ def upload_to_drive(filename, content):
 
 def main():
     # Start with the previous calendar day.
-    date = (datetime.now(JST) - timedelta(days=1)).strftime("%Y-%m-%d")
+    date = "2026-11-20"
     rows = get_stock_data(date)
 
     if not rows:
