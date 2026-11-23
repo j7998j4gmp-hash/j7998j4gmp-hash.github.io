@@ -55,7 +55,7 @@ def upload_to_drive(filename, content):
     result = service.files().list(
         q=f"name = '{escaped}' and trashed = false",
         fields="files(id,name),nextPageToken",
-        page_size=100,
+        pageSize=100,
     ).execute()
 
     media = MediaIoBaseUpload(
