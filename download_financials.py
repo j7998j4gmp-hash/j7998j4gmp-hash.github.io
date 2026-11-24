@@ -81,41 +81,62 @@ def upload_to_drive(filename, content):
 
 
 def main():
-    # Initial test: last 14 calendar days
+    # Recheck all dates in the last 15 days.
     today = datetime.now(JST).date()
+    total_rows = 0
+    saved_days = 0
+    failed_dates = []
 
-    for days_ago in range(0, 15):
+    for days_ago in range(14, -1, -1):
         date = (
             today - timedelta(days=days_ago)
         ).strftime("%Y-%m-%d")
 
-        rows = get_financial_data(date)
+        try:
+            rows = get_financial_data(date)
 
-        if not rows:
-            continue
+            if not rows:
+                print("No disclosures:", date)
+                continue
 
-        fields = list(dict.fromkeys(
-            key for row in rows for key in row.keys()
-        ))
+            fields = list(dict.fromkeys(
+                key for row in rows for key in row.keys()
+            ))
 
-        output = io.StringIO()
-        writer = csv.DictWriter(output, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(rows)
+            output = io.StringIO()
+            writer = csv.DictWriter(
+                output,
+                fieldnames=fields
+            )
+            writer.writeheader()
+            writer.writerows(rows)
 
-        filename = f"jquants_financials_{date}.csv"
+            filename = f"jquants_financials_{date}.csv"
 
-        upload_to_drive(
-            filename,
-            output.getvalue().encode("utf-8-sig"),
+            upload_to_drive(
+                filename,
+                output.getvalue().encode("utf-8-sig")
+            )
+
+            print("Saved date:", date)
+            print("Rows:", len(rows))
+
+            total_rows += len(rows)
+            saved_days += 1
+
+        except Exception as error:
+            print("FAILED:", date, type(error).__name__, str(error))
+            failed_dates.append(date)
+
+    print("Saved days:", saved_days)
+    print("Total rows:", total_rows)
+
+    if failed_dates:
+        raise RuntimeError(
+            "Failed dates: " + ", ".join(failed_dates)
         )
-
-        print("Disclosure date:", date)
-        print("Rows:", len(rows))
-        return
-
-    print("No financial data found in the last 15 days")
 
 
 if __name__ == "__main__":
     main()
+
