@@ -50,10 +50,31 @@ def upload_to_drive(filename, content):
 
     service = build("drive", "v3", credentials=credentials)
 
+    
+    # Find the J-Quants stock data folder.
+    roots = service.files().list(
+        q="name = 'J-Quants' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+        fields="files(id,name)",
+    ).execute()["files"]
+
+    if len(roots) != 1:
+        raise RuntimeError("J-Quants folder not uniquely found")
+
+    folders = service.files().list(
+        q=f"name = '株価データ' and '{roots[0]['id']}' in parents and trashed = false",
+        fields="files(id,name)",
+    ).execute()["files"]
+
+    if len(folders) != 1:
+        raise RuntimeError("Stock folder not uniquely found")
+
+    folder_id = folders[0]["id"]
+
+
     # Search only for files visible to this OAuth application.
     escaped = filename.replace("\\", "\\\\").replace("'", "\\'")
     result = service.files().list(
-        q=f"name = '{escaped}' and trashed = false",
+        q=f"name = '{escaped}' and '{folder_id}' in parents and trashed = false",
         fields="files(id,name),nextPageToken",
         pageSize=100,
     ).execute()
@@ -73,7 +94,11 @@ def upload_to_drive(filename, content):
         print("Updated:", filename)
     else:
         service.files().create(
-            body={"name": filename, "mimeType": "text/csv"},
+            body={
+    "name": filename,
+    "mimeType": "text/csv",
+    "parents": [folder_id],
+},
             media_body=media,
             fields="id",
         ).execute()
