@@ -86,7 +86,7 @@ def main():
     rows = []
     date = None
 
-    for days_ago in range(1, 8):
+    for days_ago in range(0, 8):
         candidate = (today - timedelta(days=days_ago)).strftime("%Y-%m-%d")
         rows = get_stock_data(candidate)
 
